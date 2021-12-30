@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title Draw a blue reactangle> </title>
+	</head>
+	
+	<body onload="main()">
+		<canvas id="webgl" width="400" height="400">
+			Please use a browser that supports "canvas"
+		</canvas>
+		
+		<script> 
+			var VSHADER_SOURCE = 
+				'void main() {\n' +
+				' gl_Position = vec4(1.0, 0.0, 0.0, 1.0);\n' +
+				' gl_PointSize = 10.0;\n' +
+				'}\n';
+			
+			var FSHADER_SOURCE = 
+				'void main() {\n' +
+				' gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);\n' +
+				'}\n';
+		
+			var main = function() {
+				var canvas = document.getElementById("webgl");
+				if (!canvas) {
+					return console.log("bibibib");
+				}
+
+				var ctx = canvas.getContext("webgl");
+				if (!ctx) return console.log("err");
+				
+				let vshader = ctx.createShader(ctx.VERTEX_SHADER);
+				ctx.shaderSource(vshader, VSHADER_SOURCE);
+				ctx.compileShader(vshader);
+				
+				let compiled = ctx.getShaderParameter(vshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(vshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(vshader);
+				}
+				
+				let fshader = ctx.createShader(ctx.FRAGMENT_SHADER);
+				ctx.shaderSource(fshader, FSHADER_SOURCE);
+				ctx.compileShader(fshader);
+				
+				compiled = ctx.getShaderParameter(fshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(fshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(fshader);
+				}
+				
+				let pro = ctx.createProgram();
+				ctx.attachShader(pro, vshader);
+				ctx.attachShader(pro, fshader);
+				
+				ctx.linkProgram(pro);
+				
+				ctx.useProgram(pro);
+				ctx.program = pro;
+				
+				ctx.clearColor(0.0, 0.0, 0.0, 1)
+				ctx.clear(ctx.COLOR_BUFFER_BIT);
+				
+				ctx.drawArrays(ctx.POINTS, 0, 1);
+				
+				//ctx.fillStyle = "rgba(255, 0 , 0,1.0)"
+				//ctx.fillRect(120,10,150,150);
+			}
+		</script>
+	</body>
+</html>

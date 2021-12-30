@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title Draw a blue reactangle> </title>
+	</head>
+	
+	<body onload="main()">
+		<canvas id="webgl" width="400" height="400">
+			Please use a browser that supports "canvas"
+		</canvas>
+		
+		<script> 
+			var VSHADER_SOURCE = 
+                'attribute vec4 a_Position;\n'+
+                'attribute float a_PointSize;\n'+
+				'void main() {\n' +
+				' gl_Position = a_Position;\n' +
+				' gl_PointSize = 10.0;\n' +
+				'}\n';
+			
+			var FSHADER_SOURCE = 
+                'precision mediump float;\n'+
+                'uniform vec4 u_FragColor;\n'+
+				'void main() {\n' +
+				' gl_FragColor = u_FragColor;\n' +
+				'}\n';
+		
+			var main = function() {
+				var canvas = document.getElementById("webgl");
+				if (!canvas) {
+					return console.log("bibibib");
+				}
+
+				var ctx = canvas.getContext("webgl");
+				if (!ctx) return console.log("err");
+				
+				let vshader = ctx.createShader(ctx.VERTEX_SHADER);
+				ctx.shaderSource(vshader, VSHADER_SOURCE);
+				ctx.compileShader(vshader);
+				
+				let compiled = ctx.getShaderParameter(vshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(vshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(vshader);
+				}
+				
+				let fshader = ctx.createShader(ctx.FRAGMENT_SHADER);
+				ctx.shaderSource(fshader, FSHADER_SOURCE);
+				ctx.compileShader(fshader);
+				
+				compiled = ctx.getShaderParameter(fshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(fshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(fshader);
+				}
+				
+				let pro = ctx.createProgram();
+				ctx.attachShader(pro, vshader);
+				ctx.attachShader(pro, fshader);
+				
+				ctx.linkProgram(pro);
+				
+				ctx.useProgram(pro);
+				ctx.program = pro;
+				
+                var a_Position =  ctx.getAttribLocation(ctx.program, 'a_Position');
+                if (a_Position < 0) {
+                    console.log("faile to get the storage location of a_Position");
+                    return;
+                }
+
+                var a_PointSize = ctx.getAttribLocation(ctx.program, 'a_PointSize');
+                if (a_PointSize < 0) {
+                    console.log("faile to get the storage location of a_PointSize");
+                    return;
+                }
+
+                ctx.vertexAttrib1f(a_Position, 0.5, 0.0, 0.0);
+                ctx.vertexAttrib1f(a_PointSize, 20.0);
+
+                var u_FragColor = ctx.getUniformLocation(ctx.program, 'u_FragColor');
+
+                canvas.onmousedown = function(ev) {
+                    click(ev, ctx, canvas, a_Position, u_FragColor);
+                }
+
+				ctx.clearColor(0.0, 0.0, 0.0, 1)
+				ctx.clear(ctx.COLOR_BUFFER_BIT);
+				
+
+
+
+				ctx.drawArrays(ctx.POINTS, 0, 1);
+				
+				//ctx.fillStyle = "rgba(255, 0 , 0,1.0)"
+				//ctx.fillRect(120,10,150,150);
+			}
+
+            var points = [];
+            var colors = []
+            function click(ev, ctx, canvas, a_Position, u_FragColor) {
+                var x = ev.clientX;
+                var y = ev.clientY;
+
+                var rect = ev.target.getBoundingClientRect();
+                
+                x = ((x - rect.left) - canvas.height/2) / (canvas.height/2);
+                y = (canvas.width/2 - (y - rect.top)) / (canvas.width/2);
+                console.log(x, y, rect);
+                points.push({x: x ,y:y});
+
+                if (x >= 0.0 && y >= 0.0) {
+                    colors.push([1.0, 0.0, 0.0, 1.0]);
+                }
+                else if (x < 0.0 && y < 0.0) {
+                    colors.push([0.0, 1.0, 0.0, 1.0]);
+                }
+                else {
+                    colors.push([1.0, 1.0, 1.0, 1.0]);
+                }
+
+                ctx.clear(ctx.COLOR_BUFFER_BIT);
+
+                for (let i = 0; i < points.length; i ++) {
+                    ctx.vertexAttrib2f(a_Position, points[i].x, points[i].y);
+                    ctx.uniform4f(u_FragColor, colors[i][0], colors[i][1], colors[i][2], colors[i][3]);
+                    ctx.drawArrays(ctx.POINTS, 0 , 1);
+                }
+            }
+		</script>
+	</body>
+</html>
