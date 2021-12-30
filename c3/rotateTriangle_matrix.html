@@ -14,13 +14,9 @@
 		<script> 
 			var VSHADER_SOURCE = 
                 'attribute vec4 a_Position;\n'+
-				'uniform float u_CosB, u_SinB;\n' + 
+				'uniform mat4 u_xformMatrix;\n' + 
 				'void main() {\n' +
-				' gl_Position.x = a_Position.x  * u_CosB - a_Position.y * u_SinB;\n' +
-				' gl_Position.y = a_Position.x  * u_SinB + a_Position.y * u_CosB;\n' +
-				' gl_Position.z = a_Position.z;\n' +
-				' gl_Position.w = 1.0;\n' +
-				// ' gl_PointSize = 10.0;\n' +
+				' gl_Position = u_xformMatrix * a_Position;\n' +
 				'}\n';
 			
 			var FSHADER_SOURCE = 
@@ -74,11 +70,25 @@
 				var u_FragColor = ctx.getUniformLocation(ctx.program, 'u_FragColor');
 				ctx.uniform4f(u_FragColor, 1.0, 0.0, 0.0, 1.0);
 				
-				var u_CosB = ctx.getUniformLocation(ctx.program, 'u_CosB');
-				ctx.uniform1f(u_CosB, Math.cos(Math.PI * 90 / 180));
+				// let radian = Math.PI * 90 / 180;
+				// var cosB = Math.cos(radian);
+				// var sinB = Math.sin(radian);
 
-				var u_SinB = ctx.getUniformLocation(ctx.program, 'u_SinB');
-				ctx.uniform1f(u_SinB, Math.sin( Math.PI * 90 / 180));
+				// var xformMatrix = new Float32Array([
+				// 	cosB, sinB, 0.0, 0.0,
+				// 	-sinB, cosB, 0.0, 0.0,
+				// 	0.0, 0.0, 1.0, 0.0,
+				// 	0.0, 0.0, 0.0, 1.0
+				// ])
+				var xformMatrix = new Float32Array([
+					1.0, 0.0, 0.0, 0.0,
+					0.0, 1.0, 0.0, 0.0,
+					0.0, 0.0, 1.0, 0.0,
+					0.5, 0.5, 0.0, 1.0
+				])
+
+				var u_xformMatrix = ctx.getUniformLocation(ctx.program, "u_xformMatrix");
+				ctx.uniformMatrix4fv(u_xformMatrix, false, xformMatrix);
 
                 var n = initVertexBuffers(ctx);
 				if (n < 0) return;
