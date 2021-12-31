@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title Draw a blue reactangle> </title>
+
+		<script src="./coun-matrix.js"> </script>
+	</head>
+	
+	<body onload="main()">
+		<canvas id="webgl" width="400" height="400">
+			Please use a browser that supports "canvas"
+		</canvas>
+		
+		
+
+		<script> 
+			var VSHADER_SOURCE = 
+                'attribute vec4 a_Position;\n'+
+				'uniform mat4 u_modelMatrix;\n' + 
+				'void main() {\n' +
+				' gl_Position = u_modelMatrix * a_Position;\n' +
+				'}\n';
+			
+			var FSHADER_SOURCE = 
+                'precision mediump float;\n'+
+                'uniform vec4 u_FragColor;\n'+
+				'void main() {\n' +
+				' gl_FragColor = u_FragColor;\n' +
+				'}\n';
+		
+			var main = function() {
+				var canvas = document.getElementById("webgl");
+				if (!canvas) {
+					return console.log("bibibib");
+				}
+
+				var ctx = canvas.getContext("webgl");
+				if (!ctx) return console.log("err");
+				
+				let vshader = ctx.createShader(ctx.VERTEX_SHADER);
+				ctx.shaderSource(vshader, VSHADER_SOURCE);
+				ctx.compileShader(vshader);
+				
+				let compiled = ctx.getShaderParameter(vshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(vshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(vshader);
+				}
+				
+				let fshader = ctx.createShader(ctx.FRAGMENT_SHADER);
+				ctx.shaderSource(fshader, FSHADER_SOURCE);
+				ctx.compileShader(fshader);
+				
+				compiled = ctx.getShaderParameter(fshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(fshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(fshader);
+				}
+				
+				let pro = ctx.createProgram();
+				ctx.attachShader(pro, vshader);
+				ctx.attachShader(pro, fshader);
+				
+				ctx.linkProgram(pro);
+				
+				ctx.useProgram(pro);
+				ctx.program = pro;
+				
+				
+				var u_FragColor = ctx.getUniformLocation(ctx.program, 'u_FragColor');
+				ctx.uniform4f(u_FragColor, 1.0, 0.0, 0.0, 1.0);
+				
+				// let radian = Math.PI * 90 / 180;
+				// var cosB = Math.cos(radian);
+				// var sinB = Math.sin(radian);
+
+				// var xformMatrix = new Float32Array([
+				// 	cosB, sinB, 0.0, 0.0,
+				// 	-sinB, cosB, 0.0, 0.0,
+				// 	0.0, 0.0, 1.0, 0.0,
+				// 	0.0, 0.0, 0.0, 1.0
+				// ])
+				var modelMatrix = new Matrix4();
+				modelMatrix.setTranslate(0.5, 0, 0);
+				modelMatrix.rotate(60, 0, 0, 1);
+				
+				var u_modelMatrix = ctx.getUniformLocation(ctx.program, "u_modelMatrix");
+				ctx.uniformMatrix4fv(u_modelMatrix, false, modelMatrix.elements);
+
+                var n = initVertexBuffers(ctx);
+				if (n < 0) return;
+
+				ctx.clearColor(0.0, 0.0, 0.0, 1)
+				ctx.clear(ctx.COLOR_BUFFER_BIT);
+
+				ctx.drawArrays(ctx.TRIANGLES, 0, n);
+			}
+
+			function initVertexBuffers(gl) {
+				var vertices = new Float32Array([0.0, 0.3, -0.3, -0.3, 0.3, -0.3]);
+
+				var n = 3;
+
+				var vertexBuffer = gl.createBuffer();
+				if (!vertexBuffer) {
+					console.log("faile to create the buffer object");
+					return -1;
+				}
+				
+				gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+				var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+
+				if (a_Position < 0) {
+					console.log("faile to get the storage location of a_Position");
+					return;
+				}
+
+				gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+
+				gl.enableVertexAttribArray(a_Position);
+
+				return n;
+			}
+		</script>
+	</body>
+</html>

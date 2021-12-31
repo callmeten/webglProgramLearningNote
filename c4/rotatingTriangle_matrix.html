@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title Draw a blue reactangle> </title>
+
+		<script src="./coun-matrix.js"> </script>
+	</head>
+	
+	<body onload="main()">
+		<canvas id="webgl" width="400" height="400">
+			Please use a browser that supports "canvas"
+		</canvas>
+		
+		
+
+		<script> 
+			var VSHADER_SOURCE = 
+                'attribute vec4 a_Position;\n'+
+				'uniform mat4 u_xformMatrix;\n' + 
+				'void main() {\n' +
+				' gl_Position = u_xformMatrix * a_Position;\n' +
+				'}\n';
+			
+			var FSHADER_SOURCE = 
+                'precision mediump float;\n'+
+                'uniform vec4 u_FragColor;\n'+
+				'void main() {\n' +
+				' gl_FragColor = u_FragColor;\n' +
+				'}\n';
+		
+			var ROTATE_ANGLE = 45;
+			var draw_times = 0;
+
+			var main = function() {
+				var canvas = document.getElementById("webgl");
+				if (!canvas) {
+					return console.log("bibibib");
+				}
+
+				var gl = canvas.getContext("webgl");
+				if (!gl) return console.log("err");
+				
+				let vshader = gl.createShader(gl.VERTEX_SHADER);
+				gl.shaderSource(vshader, VSHADER_SOURCE);
+				gl.compileShader(vshader);
+				
+				let compiled = gl.getShaderParameter(vshader, gl.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = gl.getShaderInfoLog(vshader);
+					console.log("filed to compiler shader" + erro);
+					gl.deleteShader(vshader);
+				}
+				
+				let fshader = gl.createShader(gl.FRAGMENT_SHADER);
+				gl.shaderSource(fshader, FSHADER_SOURCE);
+				gl.compileShader(fshader);
+				
+				compiled = gl.getShaderParameter(fshader, gl.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = gl.getShaderInfoLog(fshader);
+					console.log("filed to compiler shader" + erro);
+					gl.deleteShader(fshader);
+				}
+				
+				let pro = gl.createProgram();
+				gl.attachShader(pro, vshader);
+				gl.attachShader(pro, fshader);
+				
+				gl.linkProgram(pro);
+				
+				gl.useProgram(pro);
+				gl.program = pro;
+				
+				
+				var u_FragColor = gl.getUniformLocation(gl.program, 'u_FragColor');
+				gl.uniform4f(u_FragColor, 1.0, 0.0, 0.0, 1.0);
+
+				var u_xformMatrix = gl.getUniformLocation(gl.program, "u_xformMatrix");
+
+				var n = initVertexBuffers(gl);
+				if (n < 0) return;
+
+				gl.clearColor(0.0, 0.0, 0.0, 1);
+
+				let matrix = new Matrix4();
+				var currentAngle = 0.0;
+				var tick = function () {
+					currentAngle = animate(currentAngle);
+					draw(gl, u_xformMatrix, currentAngle, matrix);
+					requestAnimationFrame(tick);
+				}
+				tick();
+				// setInterval(function() {
+				// 	(ROTATE_ANGLE * draw_times) >= 360 ? draw_times = 1 : draw_times++;
+				// 	var angle = ROTATE_ANGLE * draw_times;
+				// 	draw(gl, angle, 0, 0, 1);
+				// }, 17)
+
+			}
+
+			function initVertexBuffers(gl) {
+				var vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
+
+				var n = 3;
+
+				var vertexBuffer = gl.createBuffer();
+				if (!vertexBuffer) {
+					console.log("faile to create the buffer object");
+					return -1;
+				}
+				
+				gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+				var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+
+				if (a_Position < 0) {
+					console.log("faile to get the storage location of a_Position");
+					return;
+				}
+
+				gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+
+				gl.enableVertexAttribArray(a_Position);
+
+				return n;
+			}
+
+			function draw(gl, location, angle, matrix) {
+				matrix.setRotate(angle, 0, 0, 1);
+
+				gl.uniformMatrix4fv(location, false, matrix.elements);
+
+				gl.clear(gl.COLOR_BUFFER_BIT);
+
+				gl.drawArrays(gl.TRIANGLES, 0, 3);
+			}
+
+			var g_last = Date.now();
+			function animate(angle) {
+				var now = Date.now();
+
+				var elapsed = now - g_last;
+				g_last = now;
+
+				var newAngle = angle + (ROTATE_ANGLE * elapsed) / 1000.;
+
+				return newAngle %= 360;
+			}
+
+		</script>
+	</body>
+</html>

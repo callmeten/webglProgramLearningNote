@@ -17,7 +17,7 @@ var Matrix4 = function () {
     })
 
     t.prototype.setRotate = function (angle, xAxle, yAxle, zAxle) {
-        let radian = Math.PI * 90 / 180;
+        let radian = Math.PI * angle / 180;
         let sinB = Math.sin(radian);
         let cosB = Math.cos(radian);
 
@@ -78,6 +78,42 @@ var Matrix4 = function () {
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0,
         ])
+    }
+
+    t.prototype.translate = function(x, y, z) {
+        let originMatrix = this.elements;
+        this.setTranslate(x, y, z);
+        this.elements = this.matrixMulti(this.elements, originMatrix);
+    }
+
+    
+    t.prototype.rotate = function(angle, x, y, z) {
+        let originMatrix = this.elements;
+        this.setRotate(angle, x, y, z);
+        this.elements = this.matrixMulti(this.elements, originMatrix);
+    }
+
+    
+    t.prototype.scale = function(x, y, z) {
+        let originMatrix = this.elements;
+        this.setScale(x, y, z);
+        this.elements = this.matrixMulti(this.elements, originMatrix);
+    }
+
+    /** 矩阵相乘 matrix1 * matrix2 */
+    t.prototype.matrixMulti = function(matrix1, matrix2) {
+        let result = [];
+        for (let i = 0; i < matrix1.length; i+=4) {
+            for (let j = 0; j < 4; j++) {
+                let value1 = matrix1[i] * matrix2[j];
+                let value2 = matrix1[i+1] * matrix2[j+4];
+                let value3 = matrix1[i+2] * matrix2[j+8];
+                let value4 = matrix1[i+3] * matrix2[j+12];
+                result[i+j] = value1 + value2 + value3 + value4;
+            }
+        }
+
+        return new Float32Array(result);
     }
 
     return t
