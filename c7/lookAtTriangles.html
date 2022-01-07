@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title Draw a blue reactangle> </title>
+	</head>
+	
+	<body onload="main()">
+		<canvas id="webgl" width="400" height="400">
+			Please use a browser that supports "canvas"
+		</canvas>
+		<script src="../lib/cuon-matrix.js"></script>
+		<script> 
+			var VSHADER_SOURCE = 
+                'attribute vec4 a_Position;\n'+
+				'attribute vec4 a_Color;\n' +
+				'uniform mat4 u_ViewMatrix;\n' +
+				'uniform mat4 u_ModelMatrix;\n' +
+				'varying vec4 v_Color;\n' +
+				'void main() {\n' +
+				' gl_Position = u_ViewMatrix * u_ModelMatrix * a_Position;\n' +
+				' v_Color = a_Color;\n' +
+				'}\n';
+			
+			var FSHADER_SOURCE = 
+				'precision mediump float;\n' +
+				'varying vec4 v_Color;\n' +
+				'void main() {\n' +
+				' gl_FragColor = v_Color;\n' +
+				'}\n';
+		
+			var main = function() {
+				var canvas = document.getElementById("webgl");
+				if (!canvas) {
+					return console.log("bibibib");
+				}
+
+				var ctx = canvas.getContext("webgl");
+				if (!ctx) return console.log("err");
+				
+				let vshader = ctx.createShader(ctx.VERTEX_SHADER);
+				ctx.shaderSource(vshader, VSHADER_SOURCE);
+				ctx.compileShader(vshader);
+				
+				let compiled = ctx.getShaderParameter(vshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(vshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(vshader);
+				}
+				
+				let fshader = ctx.createShader(ctx.FRAGMENT_SHADER);
+				ctx.shaderSource(fshader, FSHADER_SOURCE);
+				ctx.compileShader(fshader);
+				
+				compiled = ctx.getShaderParameter(fshader, ctx.COMPILE_STATUS);
+				if (!compiled) {
+					var erro = ctx.getShaderInfoLog(fshader);
+					console.log("filed to compiler shader" + erro);
+					ctx.deleteShader(fshader);
+				}
+				
+				let pro = ctx.createProgram();
+				ctx.attachShader(pro, vshader);
+				ctx.attachShader(pro, fshader);
+				
+				ctx.linkProgram(pro);
+				
+				ctx.useProgram(pro);
+				ctx.program = pro;
+
+                var n = initVertexBuffers(ctx);
+				if (n < 0) return;
+
+				// initTextures(ctx, n);
+
+				var u_ViewMatrix = ctx.getUniformLocation(ctx.program, 'u_ViewMatrix');
+				let viewMatrix = new Matrix4();
+				viewMatrix.setLookAt(0.20, 0.25, 0.25, 0, 0, 0, 0, 1, 0);
+				ctx.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
+
+				var u_ModelMatrix = ctx.getUniformLocation(ctx.program, 'u_ModelMatrix');
+				let modelMatrix = new Matrix4();
+				modelMatrix.setRotate(-10, 0, 0, 1)
+				ctx.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+
+
+				ctx.clearColor(0.0, 0.0, 0.0, 1)
+				ctx.clear(ctx.COLOR_BUFFER_BIT);
+
+				ctx.drawArrays(ctx.TRIANGLES, 0, n);
+				
+			}
+
+			function initVertexBuffers(gl) {
+				// var vertices = new Float32Array([
+				// 	-0.5,   0.5,  0.0, 1.0,
+				// 	-0.5,  -0.5,  0.0, 0.0,
+				// 	 0.5,   0.5,  1.0, 1.0,
+				// 	 0.5,  -0.5,  1.0, 0.0,
+				// 	]);
+				var vertices = new Float32Array([
+					0.0,   0.5,  -0.4, 0.4, 1.0, 0.4,
+					-0.5, -0.5,  -0.4, 0.4, 1.0, 0.4,
+					0.5,   -0.5,  -0.4, 1.0, 0.4, 0.4,
+
+					0.5,   0.4,  -0.2, 1.0, 0.4, 0.4,
+					-0.5,  0.4,  -0.2, 1.0, 1.0, 0.4,
+					0.0,   -0.6,  -0.2, 1.0, 1.0, 0.4,
+
+					0.0,   0.5,  0.0, 0.4, 0.4, 1.0,
+					-0.5, -0.5,  0.0, 0.4, 0.4, 1.0,
+					0.5,  -0.5,  0.0, 1.0, 0.4, 0.4,
+					]);
+
+				var n = 9;
+
+				var vertexBuffer = gl.createBuffer();
+				if (!vertexBuffer) {
+					console.log("faile to create the buffer object");
+					return -1;
+				}
+				
+				gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+				gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+				var FSIZE = vertices.BYTES_PER_ELEMENT;
+
+				var a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+				gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, FSIZE * 6, 0);
+				gl.enableVertexAttribArray(a_Position);
+
+				var a_Color = gl.getAttribLocation(gl.program, 'a_Color');
+				gl.vertexAttribPointer(a_Color, 3, gl.FLOAT, false, FSIZE*6, FSIZE * 3);
+				gl.enableVertexAttribArray(a_Color);
+
+				return n;
+			}
+
+			function initTextures(gl, n) {
+				var texture = gl.createTexture();
+				var u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler');
+				var image = new Image();
+				image.onload = function() {
+					loadTexture(gl, n, texture, u_Sampler, image);
+				}
+
+				/** 一定要 2^m * 2^n 大小的图片，不然显示不出来 */
+				image.src = './55568c96d7a3cdd.jpg';
+
+				return true;
+			}
+
+			function loadTexture(gl, n, texture, u_Sampler, image) {
+				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+				gl.activeTexture(gl.TEXTURE0);
+
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.MIRRORED_REPEAT);
+				// gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.MIRRORED_REPEAT);
+
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+				gl.uniform1i(u_Sampler, 0);
+
+				gl.clear(gl.COLOR_BUFFER_BIT);
+
+				gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+			}
+		</script>
+	</body>
+</html>
